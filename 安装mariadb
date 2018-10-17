@@ -63,3 +63,5 @@ default-character-set =utf8
 
 mysql> grant all privileges on *.* to root@'%'identified by 'password';
 
+3.指定IP地址和端口号登录MySQL数据库
+命令格式为：mysql -h ip -u root -p -P 3306例如：mysql -h 127.0.0.1 -u root -p -P 3306
