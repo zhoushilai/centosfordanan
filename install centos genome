@@ -1,0 +1,14 @@
+1. 安装oracle VM virtual
+2.从"https://www.centos.org/download/"下载centos7 http://mirrors.tuna.tsinghua.edu.cn/centos/7.5.1804/isos/x86_64/CentOS-7-x86_64-Everything-1804.iso
+3. 利用ultra ISO 导入下载的ISO文件
+4.在VM上安装centos7
+5.安装后的VM没有图形界面.使用命令{yum groupinstall "GNOME Desktop" "Graphical Administration Tools"}   安装GENOME
+6. 安装GENOME后kdump.service启动失败
+7.编辑 /etc/default/grub   加入如下参数{GRUB_CMDLINE_LINUX_DEFAULT="crashkernel=64M"}  
+8. 生成新的grub.cfg   使用命令"grub2-mkconfig -o /boot/grub2/grub.cfg"  
+  关于grub.cfg路径:对于bios+mbr磁盘是/boot/grub2/grub.cfg，对于efi启动的grub.cfg路径应该和系统类型有关，具体路径不再详细列出。 
+例如，fedora系统 efi grub.cfg的链接路径是/etc/grub2-efi.cfg，
+链接到真实路径是 /boot/efi/EFI/fedora/grub.cfg。
+centos系统efi grub.cfg的链接路径是/etc/grub2-efi.cfg，
+链接到真实路径是 /boot/efi/EFI/centos/grub.cfg。
+9. 重启 reboot
