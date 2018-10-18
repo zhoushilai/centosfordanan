@@ -97,3 +97,129 @@ Manually Importing the MariaDB Signing Key
 If you like, you can manually install the GPG key using the rpm application like so:
 
 sudo rpm --import https://yum.mariadb.org/RPM-GPG-KEY-MariaDB
+
+CentOS 7安装MariaDB 10详解以及相关配置
+
+第一步：添加 MariaDB yum 仓库
+
+首先在CentOS操作系统中/etc/yum.repos.d/目录下添加 MariaDB 的YUM配置文件MariaDB.repo文件。
+
+vi /etc/yum.repos.d/MariaDB.repo
+
+在该文件中添加以下内容保存：
+
+[mariadb]
+name = MariaDB
+baseurl = http://yum.mariadb.org/10.2/centos7-amd64
+gpgkey=https://yum.mariadb.org/RPM-GPG-KEY-MariaDB
+gpgcheck=1
+
+第二步：安装 MariaDB
+
+通过yum命令轻松安装 MariaDB。
+
+yum install MariaDB-server MariaDB-client -y
+
+MariaDB 安装完毕后，立即启动数据库服务守护进程。
+
+systemctl start mariadb
+
+设置 MariaDB 在操作系统重启后自动启动服务。
+
+systemctl enable mariadb
+
+查看 MariaDB 服务当前状态。
+
+systemctl status mariadb
+
+第三步：对 MariaDB 进行安全配置
+
+通过以下命令进行安全配置，根据实际情况用Y/N回复以下问题：设置 MariaDB 的 root 账户密码，删除匿名用户，禁用 root 远程登录，删除测试数据库，重新加载权限表。
+
+mysql_secure_installation
+
+本人全都是选择了Y，然后按回车。
+
+ 在配置完数据库的安全配置后，可以通过以下命令查看版本，确认 MariaDB已安装成功。
+
+mysql --version
+
+可以通过 MariaDB 命令行登录，然后对数据库进行sql查询操作。
+
+mysql -u root -p
+
+第四步：为 MariaDB 配置远程访问权限
+
+在第三步中如果禁用 root 远程登录选择 Y 的话就不能在别的电脑通过navicat等工具连接到数据库，这时就需要给对应的 MariaDB 账户分配权限，允许使用该账户远程连接到MariaDB。可以输入以下命令查看账号信息：
+
+select User, host from mysql.user;
+
+
+
+root账户中的host项是localhost表示该账号只能进行本地登录，我们需要修改权限，输入命令：
+
+GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY 'password' WITH GRANT OPTION;
+
+修改权限。%表示针对所有IP，password表示将用这个密码登录root用户，如果想只让某个IP段的主机连接，可以修改为：
+
+GRANT ALL PRIVILEGES ON *.* TO 'root'@'192.168.71.%' IDENTIFIED BY 'my-new-password' WITH GRANT OPTION;
+
+最后别忘了：
+
+FLUSH PRIVILEGES;
+
+保存更改后，再看看用户账号信息：
+
+
+
+这个时候发现相比之前多了一项，它的host项是%，这个时候说明配置成功了，我们可以用该账号进行远程访问了。
+
+第五步：CentOS 7 开放防火墙端口
+
+在第四步后如果还是不能远程连上数据库的话应该就是3306端口被防火墙拦截了，这时我们就需要关闭防火墙或者开放防火墙端口。
+
+关闭防火墙：
+
+systemctl stop firewalld.service            #停止firewall
+
+systemctl disable firewalld.service        #禁止firewall开机启动
+
+开放防火墙端口，开启后要重启防火墙：
+
+firewall-cmd --zone=public --add-port=3306/tcp --permanent
+
+firewall-cmd --reload
+
+第六步：设置数据库字母大小写不敏感
+
+vi /etc/my.cnf.d/server.cnf
+
+在[mysqld]下加上】
+
+lower_case_table_names=1
+
+默认是等于0的,即大小写敏感。改成1就OK了。如果之前已经建了数据库要把之前建立的数据库删除，重建才生效。
+
+第七步：设置MariaDB数据库默认编码
+
+MariaDB的默认编码是latin1，插入中文会乱码，因此需要将编码改为utf8。
+
+1.登录，使用以下命令查看当前使用的字符集，应该有好几个不是utf8格式。
+
+SHOW VARIABLES LIKE 'character%';
+
+2.修改的配置文件
+
+vi /etc/my.cnf.d/client.cnf
+
+在[client]字段里加入
+
+default-character-set=utf8
+
+vi /etc/my.cnf.d/server.cnf
+
+在[mysqld]字段里加入
+
+character-set-server=utf83.重启 MariaDB 配置生效。
+
+systemctl restart mariadb
