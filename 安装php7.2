@@ -1,0 +1,305 @@
+wget http://cn2.php.net/distributions/php-7.2.11.tar.gz
+PHP7 都出来了，你还在玩PHP5吗？
+
+MySQL5.6 早都出来了，你还在玩MySql5.2吗?
+
+Apache2.4 早都出来了，你还在玩Apache2.2吗？
+
+ 
+
+笔者不才，愿意亲自搭建环境，供搭建参考。这里是源码安装的奥，什么一键安装包，什么yum安装，什么rpm安装都统统略过（笔者是一个自虐狂，就像windows下安装软件一样，不喜欢安装在默认的位置也就是C盘了，否则系统盘就爆了）
+
+安装之前了，要说明下，要保证PHP在最后安装，原因后面揭晓。安装任何一个软件之前，都要确保它所依赖的库都安装了。
+
+ 
+
+(本处安装环境 centos6.4)
+
+首先来安装apache2.4
+
+先到apache官方网站 下载 http://httpd.apache.org/download.cgi 最新版本  httpd-2.4.18.tar.gz
+
+然后进行解压
+
+tar -zxvf httpd-2.4.18.tar.gz
+进入到解压后的目录
+
+cd httpd-2.4.18
+先不要急着安装，先确保它所依赖的库是否有，怎样查看软件是否安装(rpm -q xxx),如果没有安装依赖则进行安装(笔者一般安装依赖库直接使用yum 默认安装，这样在软件安装的时候就不需要知道依赖库的安装路径，省去不少麻烦)
+
+这些安装包是： zlib-devel pcre-devel pcre apr apr-util
+
+在安装前笔者遇到yum 无法访问源的问题，这里我们把yum的源指定为网易163的，具体指定方法请查看 http://mirrors.163.com/.help/centos.html，上面有详细步骤
+
+ 
+
+然后安装 zlib-devel pcre-devel pcre apr apr-util （apr apr-util 这两个库，笔者在安装时发现使用yum安装不可取，编译时找不到类库，因此笔者这里采用源码安装方式）
+
+yum install zlib-devel pcre-devel pcre
+然后我们使用源码安装apr apr-util 这两个库，这两个库的源码安装包可以到（http://apr.apache.org/download.cgi）找到
+
+分别下载
+
+wget http://mirrors.noc.im/apache//apr/apr-1.5.2.tar.gz
+wget http://mirrors.noc.im/apache//apr/apr-util-1.5.4.tar.gz
+然后分别解压，并安装(一定要确保安装了 gcc-c++ 没有的话使用 yum install gcc-c++ 进行安装)
+
+tar -zxvf apr-1.5.2.tar.gz
+cd apr-1.5.2
+./configure --prefix=/usr/local/apr/
+make && make install
+tar -zxvf apr-util-1.5.4.tar.gz 
+cd apr-util-1.5.4
+./configure --prefix=/usr/local/apr-util/  --with-apr=/usr/local/apr/
+make && make install
+ 
+
+下面开始对Apache进行安装配置，可以使用
+
+./configure --help 
+查看安装时可以配置哪些参数，下面我们开始配置一些参数并进行检查
+
+复制代码
+./configure  \
+ --prefix=/usr/local/apache/ \
+ --with-apr=/usr/local/apr/ \
+ --with-apr-util=/usr/local/apr-util/ \
+ --enable-so \
+ --enable-deflate=shared \
+ --enable-expires=shared \
+ --enable-rewrite=shared \
+ --enable-static-support
+复制代码
+检查无误，然后开始编译安装
+
+make && make install
+然后，漫长等待，大概半个小时。。。
+
+等安装完以后进入到安装目录，开启apache服务
+
+cd /usr/local/apache/bin/
+./apachectl start
+哎，发现报错
+
+AH00558: httpd: Could not reliably determine the server's fully qualified domain name, using localhost.localdomain. Set the 'ServerName' directive globally to suppress this message
+
+额，原来就是配置文件中没有serverName,那就在httpd.conf 中增加 ServerName 
+
+vim /usr/local/apache/conf/httpd.conf
+
+#增加
+ServerName localhost
+完了之后再重新启动apache，发现一切正常，然后我们访问下看看是否OK
+
+
+
+好了，这里算是大功告成了，apache2.4 安装完毕
+
+ 
+
+ 
+
+好了，现在我们开始安装mysql
+
+先要下载mysql源码安装包，我们这里使用mysql-5.6.28.tar.gz ，这个可以到官网上下载，然后解压
+
+tar -zxvf mysql-5.6.28.tar.gz
+还是老话，先不急着安装，先看看mysql依赖的类库是否安装，没有的话就安装
+
+yum -y install make gcc-c++ cmake bison-devel  ncurses-devel
+进入到解压后的mysql目录，你会惊奇的发现没有configure 文件，这下如何是好。这个主要是新版本的mysql使用了cmake 进行安装，所以没有之前的configure文件了
+
+现在我们就使用cmake 进行安装配置
+
+复制代码
+cmake \
+-DCMAKE_INSTALL_PREFIX=/usr/local/mysql \
+-DMYSQL_DATADIR=/usr/local/mysql/data \
+-DSYSCONFDIR=/etc \
+-DWITH_MYISAM_STORAGE_ENGINE=1 \
+-DWITH_INNOBASE_STORAGE_ENGINE=1 \
+-DWITH_MEMORY_STORAGE_ENGINE=1 \
+-DWITH_READLINE=1 \
+-DMYSQL_UNIX_ADDR=/var/lib/mysql/mysql.sock \
+-DMYSQL_TCP_PORT=3306 \
+-DENABLED_LOCAL_INFILE=1 \
+-DWITH_PARTITION_STORAGE_ENGINE=1 \
+-DEXTRA_CHARSETS=all \
+-DDEFAULT_CHARSET=utf8 \
+-DDEFAULT_COLLATION=utf8_general_ci
+复制代码
+上面几个重要的地方
+
+'-DCMAKE_INSTALL_PREFIX' 是安装目录
+
+'-DMYSQL_DATADIR' 是数据文件存放目录
+
+'-DSYSCONFDIR' 配置文件目录
+
+'-DMYSQL_UNIX_ADDR' SOCK文件存放目录
+
+'-DMYSQL_TCP_PORT' 端口号
+
+检查无误后，就开始编译安装了
+
+make && make install
+然后，然后,然后就是半个小时的等待。。。
+
+ 
+
+等一切就绪后，我们需要确保存在 mysql组和mysql用户
+
+cat /etc/group|grep 'mysql'
+cat /etc/passwd|grep 'mysql'
+没有的话就添加
+
+groupadd mysql
+useradd -g mysql mysql
+然后将目录'/usr/local/mysql'的所有者改为mysql
+
+chown -R mysql:mysql /usr/local/mysql
+这时算是已经安装完成了，但是mysql中是没有数据的(即使系统自带的数据都没有)，这时需要执行自带脚本，初始化mysql数据
+
+/usr/local/mysql/scripts/mysql_install_db \
+--basedir=/usr/local/mysql --datadir=/usr/local/mysql/data --user=mysql
+执行完成后，你会发现/usr/local/mysql/data 目录下多了一些文件，这些就是mysql的数据文件了
+
+然后启动mysql,这时要注意,我们上面指定配置文件位于'/etc'目录下，但是我们为了方便，想把mysql配置文件放到'/usr/local/mysql/'，这时我们需要把'/etc/my.conf'更改一下名称
+
+mv /etc/my.cnf  /etc/my.cnf.bak
+这时mysql 在'/etc'目录下找不到，就会到'$basedir'下去找，也就是'/usr/local/mysql/'目录
+
+此时mysql的安装工作算是完了，下面就要启动了，你会发现使用使用
+
+/usr/local/mysql/bin/mysql start
+无法启动，报错为
+
+ERROR 2002 (HY000): Can't connect to local MySQL server through socket '/var/lib/mysql/mysql.sock' (2)
+
+ 
+
+之前笔者怎么弄都不行，即使建立'/var/lib/mysql/mysql.sock' 后来终于知道，原来不是怎么启动的，而是
+
+/usr/local/mysql/support-files/mysql.server start
+然后，测试下
+
+/usr/local/mysql/bin/mysql -u root
+
+show databases;
+
+
+好了，到这里mysql 算是安装成功了！
+
+ 
+
+最后一步，我们要安装PHP7了，最为激动人心的时刻到了
+
+首先还是要下载PHP7 ，这个可以到官网上下载，然后就是解压，和上面一样的命令（笔者这里使用 PHP7.0.2）
+
+安装之前还是老生常谈，依赖包要先安装上
+
+php-mcrypt libmcrypt libmcrypt-devel  autoconf  freetype gd jpegsrc libmcrypt libpng libpng-devel libjpeg libxml2 libxml2-devel zlib curl curl-devel  
+
+挺繁琐，一堆依赖
+
+yum -y install php-mcrypt libmcrypt libmcrypt-devel  autoconf  freetype gd jpegsrc libmcrypt libpng libpng-devel libjpeg libxml2 libxml2-devel zlib curl curl-devel 
+复制代码
+./configure 
+--prefix=/usr/local/php/ 
+--with-apxs2=/usr/local/apache/bin/apxs 
+--enable-mbstring
+--with-curl 
+--with-gd 
+--enable-fpm 
+--enable-mysqlnd  
+--with-pdo-mysql=mysqlnd 
+--with-config-file-path=/usr/local/php/etc/ 
+--with-mysqli=mysqlnd 
+--with-mysql-sock=/var/lib/mysql/mysql.sock
+复制代码
+ 
+
+上面编译时配置支持了很多东西，大家可以按照自己的需求添加，但是有一个基础的必须配置好
+
+--prefix 安装目录
+
+--with-apxs2 apache文件所在地
+
+--with-mysql-sock=/var/lib/mysql/mysql.sock mysql的sock文件地址
+
+--enable-mbstring 支持mbstring
+
+--with-curl 支持curl 
+
+--with-gd 支持gd
+
+--enable-fpm 支持fpm
+
+--enable-mysqlnd --with-pdo-mysql pdo支持
+
+ 
+
+检查没有错误了，就可以安装了，当然了如果有错误，多少依赖没有安装上去，根据提示依次安装相关依赖库
+
+然后就开始编译安装了
+
+make && make install
+经过半个小时漫长的等待....
+
+安装完成后，我们要把源码包中的配置文件复制到PHP安装目录下，源码包中有两个配置  php.ini-development  php.ini-production  ，看名字就知道，一个是开发环境，一个是生产环境，我们这里就复制开发环境的
+
+cp php.ini-development  /usr/local/php/etc/php.ini
+到这里，还最后一个工作没有做，就是让apache去解析PHP文件，在apache配置文件httpd.conf 中加上一条
+
+Addtype application/x-httpd-php .php .phtml
+然后重新启动apache 
+
+/usr/local/apache/bin/apachectl restart
+然后在目录/usr/local/apache/htdocs/ 目录下增加test.php 
+
+<?
+phpinfo();
+我们开始访问 localhost/test.php, 然后显示出激动人心的画面
+
+
+
+ 
+
+到这里，专属你的全部最新版本的LAMP环境就算搭建成功了！！！！
+
+ 
+
+后面在讲述点小知识，有时你需要为php添加扩展，windows下弄两个dll 然后改下php.ini 就OK了，但是centos下就不行，还得编译。这样要是让你重新编译PHP，那笔者就要受人唾骂了，我们这里讲述的就是不需要重新编译PHP，就可以为PHP添加扩展
+
+这里例子我们要安装openssl 扩展，在你的源码安装包 ext 下会有 openssl 目录, 进入到该目录
+
+首先调用我们已经编译好的  phpize
+
+/usr/local/php/bin/phpize
+发现会报错
+
+Cannot find config.m4. 
+Make sure that you run '/usr/local/php/bin/phpize' in the top level source directory of the module
+
+好，然后我们就把该目录下的 config0.m4 复制到  config.m4 中
+
+cp config0.m4 config.m4
+然后再次执行
+
+/usr/local/php/bin/phpize
+诶，这下OK了，弄完之后，你会发现里面多了些文件 其中有configure文件，这个就是我们想要的
+
+./configure \--with-php-config=/usr/local/php/bin/php-config
+编译完成后，就开始安装
+
+make && make install
+这是你会在你的扩展目录下发现 so 文件（扩展目录没有指定的话，就位于 /usr/local/php/lib/php/extensions/no-debug-zts-xxx 里面 ）
+
+然后在php.ini 加上该扩展
+
+ extension=/usr/local/php/lib/php/extensions/no-debug-non-zts-20151012/openssl.so
+然后重启apache 再次访问test.php 就会发现扩展就安装上去了
+
+ 
+
+OK，这里关于LAMP安装的东东算是完了，其实安装倒不是很复杂，复杂的是各种依赖，真是醉了，各种依赖啊，有木有！！！！
