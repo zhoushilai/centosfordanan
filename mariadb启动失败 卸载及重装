@@ -1,0 +1,99 @@
+搜索所有包含mariadb软件包:
+rpm -qa | grep mariadb
+
+1，把原来的软件卸载掉
+rpm -e mariadb-devel（后面自己一个一个卸载）
+2，删除之前卸载残留及配置文件
+find / -name "mariadb" -exec rm -rf {} \;
+
+Mariadb安装在CENTOS上需要选择版本:
+For CentOS, RedHat, and Fedora, it is highly recommended to install from a repository using yum. This page walks you through the simple steps.
+
+Adding the MariaDB YUM repository
+We have YUM repositories for several YUM-based Linux distributions. To easily generate the appropriate MariaDB.repo entry for your distribution, use our online repository generator.
+
+We currently have YUM repositories for CentOS 5, CentOS 6, CentOS 7, RHEL 5, RHEL 6, RHEL 7, and Fedora 22, 23 and 24.
+
+Once you have your MariaDB.repo entry, add it to a file under /etc/yum.repos.d/. (We suggest something like /etc/yum.repos.d/MariaDB.repo.)
+
+An example MariaDB.repo file for CentOS 7 is:
+
+[mariadb]
+name = MariaDB
+baseurl = http://yum.mariadb.org/10.1/centos7-amd64
+gpgkey=https://yum.mariadb.org/RPM-GPG-KEY-MariaDB
+gpgcheck=1
+The example file above includes a gpgkey line to automatically fetch the GPG key we use to sign the repositories. This key enables yum and rpm to verify the integrity of the packages it downloads.
+
+The id of our signing key is 0xcbcb082a1bb943db. The short form of the id is 0x1BB943DB and the full key fingerprint is:
+
+1993 69E5 404B D5FC 7D2F E43B CBCB 082A 1BB9 43DB
+If you wish to fix the version to an older version, or do a yum downgrade, you can create a yum repo definition with a baseurl set to a specific version. yum clean metadata is needed if you change an existing repo definition:
+
+[mariadb]
+name = MariaDB-5.5.39
+baseurl=https://downloads.mariadb.com/files/MariaDB/mariadb-5.5.39/yum/rhel6-amd64/
+# alternative: baseurl=http://archive.mariadb.org/mariadb-5.5.39/yum/rhel6-amd64/
+gpgkey=https://yum.mariadb.org/RPM-GPG-KEY-MariaDB
+gpgcheck=1
+Installing MariaDB with YUM
+With the repo file in place you can now install MariaDB like so:
+
+sudo yum install MariaDB-server MariaDB-client
+If you don't have the MariaDB GPG Signing key installed, YUM will prompt you to install it after downloading the packages (but before installing them).
+
+If the server already has the MariaDB-Galera-server package installed, you might need to remove it prior to installing MariaDB-server (with 'sudo yum remove MariaDB-Galera-server'). No databases are removed when the MariaDB-Galera-server rpm package is removed, but as with any upgrade, it is best to have backups.
+
+Installing Older Versions from the Repository
+The MariaDB repositories contain the last few versions of MariaDB. To show what versions are available, use the following command:
+
+yum list --showduplicates MariaDB-server
+In the output you will see the available versions. For example:
+
+[admin@centos73-amd64 ~]$ yum list --showduplicates MariaDB-server
+Loaded plugins: fastestmirror
+Loading mirror speeds from cached hostfile
+ * base: centos.mirrors.ovh.net
+ * extras: centos.mirrors.ovh.net
+ * updates: centos.mirrors.ovh.net
+Available Packages
+MariaDB-server.x86_64                10.1.31-1.el7.centos                mariadb
+MariaDB-server.x86_64                10.1.32-1.el7.centos                mariadb
+mariadb-server.x86_64                1:5.5.56-2.el7                      base   
+The MariaDB repository in this example contains MariaDB 10.1.31 and MariaDB 10.1.32. There is also MariaDB 5.5.56 in the CentOS base repository.
+
+To install an older version of a package instead of the latest version we just need to specify the package name, a dash, and then the version number. And we only need to specify enough of the version number for it to be unique from the other available versions. So for this example, MariaDB-server-10.1.31 will work.
+
+However, when installing an older version of a package, yum will automatically choose the latest versions of other dependent packages that it installs along side it, so to ensure that all MariaDB packages are on the same version it is necessary to specify them all when we install. The dependent packages installed when the MariaDB-server package is installed are: MariaDB-client, MariaDB-shared, and MariaDB-common, so to install MariaDB 10.1.31 from this repository, we would do the following:
+
+sudo yum install MariaDB-server-10.1.31 MariaDB-client-10.1.31 MariaDB-shared-10.1.31 MariaDB-common-10.1.31
+The rest of the install and setup process is as normal.
+
+Installing TokuDB with YUM
+Instructions for installing TokuDB are on the How to Enable TokuDB in MariaDB page.
+
+Installing MariaDB Galera Cluster with YUM
+MariaDB until 10.0
+Galera Cluster is included in the default MariaDB packages from 10.1, so the instructions in this section are only required for MariaDB 10.0 and MariaDB 5.5.
+
+The instructions for installing MariaDB Galera Cluster are virtually the same as for installing MariaDB. The setup of the repo file is the same. The only difference is in the install step. Instead of installing the MariaDB-server package, you install the MariaDB-Galera-server and galera packages, like so:
+
+sudo yum install MariaDB-Galera-server MariaDB-client galera
+As with MariaDB-server, if you don't have the MariaDB GPG Signing key installed, YUM will prompt you to install it after downloading the packages (but before installing them).
+
+If the server already has the MariaDB-server package installed, you might need to remove it prior to installing MariaDB-Galera-server (with 'sudo yum remove MariaDB-server'). No databases are removed when the MariaDB-server rpm package is removed, but as with any upgrade, it is best to have backups.
+
+See the Galera section of the Knowledgebase for more information on MariaDB Galera Cluster.
+
+After installation
+After the installation completes, start MariaDB with:
+
+
+sudo systemctl start mariadb
+or if your system is not using systemctl:
+
+sudo /etc/init.d/mysql start
+Manually Importing the MariaDB Signing Key
+If you like, you can manually install the GPG key using the rpm application like so:
+
+sudo rpm --import https://yum.mariadb.org/RPM-GPG-KEY-MariaDB
