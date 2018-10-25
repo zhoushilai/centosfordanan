@@ -1,0 +1,60 @@
+imagecreatefromjpeg函数是一个图像处理函数，在项目开发中做图片上传、缩略图时，
+
+发现Fatal error: Call to undefined function imagecreatefromjpeg()错误了，
+
+下文是本人百度，解决问题用的方法，分享给大家，希望对大家有所帮助！
+
+代码
+
+if(!imagecreatefromjpeg("./testimg.jpg"))
+{
+echo "imagecreatefromjpeg(testimg.jpg) failed!n)";
+}
+else
+{
+echo "imagecreatefromjpeg(testimg.jpg) succn)";
+}
+
+如果你使用此函数提示php Fatal error: Call to undefined function imagecreatefromjpeg()
+
+这个错误是因为没有安装gd 的jpeg, 虽然你用phpinfo 查看有gd但 gd 不支持 jpeg
+
+安装前我的phpinfo 如下:
+
+gd
+GD Support enabled
+GD Version bundled (2.0.34 compatible)
+FreeType Support enabled
+FreeType Linkage with freetype
+FreeType Version 2.2.1
+GIF Read Support enabled
+GIF Create Support enabled
+PNG Support enabled
+libPNG Version 1.2.10
+WBMP Support enabled
+XBM Support enabled
+显然gd 没有支持jpeg 的，下面要安装 gd中的 jpeg
+
+1、找到php 源码目录
+2、进入 ext/gd 目录
+3、/usr/local/php/bin/phpize
+4、./configure --with-php-config=/usr/local/php/bin/php-config --with-jpeg-dir --with-freetype-dir
+5、make && make install
+6、重启 httpd
+安装后查看phpinfo
+
+gd
+GD Support enabled
+GD Version bundled (2.0.34 compatible)
+FreeType Support enabled
+FreeType Linkage with freetype
+FreeType Version 2.2.1
+GIF Read Support enabled
+GIF Create Support enabled
+JPEG Support enabled
+libJPEG Version 6b
+PNG Support enabled
+libPNG Version 1.2.10
+WBMP Support enabled
+XBM Support enabled
+很显然多了个 JPEG Support enabled
