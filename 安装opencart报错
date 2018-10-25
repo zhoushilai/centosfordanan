@@ -1,60 +1,75 @@
-imagecreatefromjpeg函数是一个图像处理函数，在项目开发中做图片上传、缩略图时，
+php GD 增加 jpeg支持~
+2016年12月13日 15:12:49 zzzxxbird 阅读数：4388
+有台新的php 环境 用户反应没有 gd的 jpeg 支持。查看了一下确实没有。应该是源码编译安装php 默认的GD库没有 jpeg支持。
 
-发现Fatal error: Call to undefined function imagecreatefromjpeg()错误了，
 
-下文是本人百度，解决问题用的方法，分享给大家，希望对大家有所帮助！
 
-代码
+为什么没有呢？ 。。。不知道~
 
-if(!imagecreatefromjpeg("./testimg.jpg"))
-{
-echo "imagecreatefromjpeg(testimg.jpg) failed!n)";
-}
-else
-{
-echo "imagecreatefromjpeg(testimg.jpg) succn)";
-}
 
-如果你使用此函数提示php Fatal error: Call to undefined function imagecreatefromjpeg()
 
-这个错误是因为没有安装gd 的jpeg, 虽然你用phpinfo 查看有gd但 gd 不支持 jpeg
+下面我们来 添加 jpeg 格式文件的支持 
+wget http://www.ijg.org/files/jpegsrc.v8b.tar.gz
 
-安装前我的phpinfo 如下:
+tar -zxvf  jpegsrc.v8b.tar.gz 
+cd jpeg-8b
 
-gd
-GD Support enabled
-GD Version bundled (2.0.34 compatible)
-FreeType Support enabled
-FreeType Linkage with freetype
-FreeType Version 2.2.1
-GIF Read Support enabled
-GIF Create Support enabled
-PNG Support enabled
-libPNG Version 1.2.10
-WBMP Support enabled
-XBM Support enabled
-显然gd 没有支持jpeg 的，下面要安装 gd中的 jpeg
+./configure --prefix=/usr/local/jpeg --enable-shared --enable-static 
+make && make install
 
-1、找到php 源码目录
-2、进入 ext/gd 目录
-3、/usr/local/php/bin/phpize
-4、./configure --with-php-config=/usr/local/php/bin/php-config --with-jpeg-dir --with-freetype-dir
-5、make && make install
-6、重启 httpd
-安装后查看phpinfo
+下面进入到 php 源码目录下 的 ext 下的 gd目录
 
-gd
-GD Support enabled
-GD Version bundled (2.0.34 compatible)
-FreeType Support enabled
-FreeType Linkage with freetype
-FreeType Version 2.2.1
-GIF Read Support enabled
-GIF Create Support enabled
-JPEG Support enabled
-libJPEG Version 6b
-PNG Support enabled
-libPNG Version 1.2.10
-WBMP Support enabled
-XBM Support enabled
-很显然多了个 JPEG Support enabled
+进入gd 目录后执行  注意下面的 /usr/local/php5/  是你服务器 php的安装路径。我的是 这个路径就写成这样了
+
+
+/usr/local/php/bin/phpize      
+
+./configure --with-php-config=/usr/local/php5/bin/php-config --with-jpeg-dir=/usr/local/jpeg/
+
+make && make install
+
+执行完这些 系统就会提示你  gd.so 生成目录
+
+在php.ini下 添加 gd.so 后 全路径
+
+extention = /usr/local/php5/lib/php/extension/gd.so
+重启php 重启 应用服务器后就OK了
+
+
+
+按正常 这就应该解决了~  但其实没有。至少我这没有。重启apache ，一样没有 jpeg支持。
+
+使用 php -m 查看 moudel   提示已经加载GD 不能重复加载。
+
+换句话说 第一次已经包含了gd编译 所以不能引入 外部的 gd.so
+
+
+
+重新编译  php吧。。。
+
+./configure --prefix=/usr/local/php5 --with-config-file-path=/usr/local/php5/etc  --with-apxs2=/usr/local/apache/bin/apxs --enable-fpm --enable-pcntl --enable-mysqlnd --enable-opcache --enable-sockets --enable-sysvmsg --enable-sysvsem  --enable-sysvshm --enable-shmop --enable-zip --enable-ftp --enable-soap --enable-xml --enable-mbstring --disable-rpath --disable-debug --disable-fileinfo --with-mysql=/usr/local/mysql --with-mysqli --with-pdo-mysql --with-pcre-regex --with-iconv --with-zlib    --with-openssl --with-mhash --with-xmlrpc --with-curl --with-imap-ssl --with-jpeg-dir=/usr/local/jpeg 
+ 
+
+make clean
+
+make
+
+make install
+
+
+
+注意 我这里没有 --with-gd。因为我还是想通过extension 加载  gd.so。
+
+带上 --with-gd 和  --with-jpeg-dir=/usr/local/jpeg  是不是直接解决呢？我没测试。
+
+
+
+安装完成后 ，发现php已经不加载 gd了。
+
+
+
+按照上述方法 重新 编译 GD.so  （注意 一定要重新编译，之前编译的 gd.so 也是不能加载的）
+
+
+
+重启之后 查看 phpinfo  已经有了  gd下面的  jpeg 支持了。
