@@ -1,0 +1,59 @@
+ubuntu 默认的apache用户是www-data
+
+而centos默认Apache用户是apache
+查看apache配置的用户和用户组
+
+#vi /etc/httpd/conf/httpd.conf
+1
+1
+#
+# If you wish httpd to run as a different user or group, you must run
+# httpd as root initially and it will switch.
+#
+# User/Group: The name (or #number) of the user/group to run httpd as.
+# It is usually good practice to create a dedicated user and group for
+# running httpd, as with most system services.
+#
+User  apache
+Group apache
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+可以看到User和Group 都是 apache。
+
+2.修改你要操作的文件夹用户和权限，将用户就改为和apache配置一样，将权限修改为755：
+
+#chown -R apache:apache your_folder
+#chmod -R 755 your_folder
+1
+2
+1
+3.按理说到这步应该问题就解决了，可是这天使用的是刚装的新系统，SELINUX 忘记关了，害我调试了一个下午，坑爹啊！！！
+
+关闭SELINUX：
+
+#vi /etc/selinux/config
+#SELINUX=enforcing #注释掉
+#SELINUXTYPE=targeted #注释掉
+SELINUX=disabled #增加
+:wq! #保存退出
+#setenforce 0 #使配置立即生效
+--------------------- 
+
