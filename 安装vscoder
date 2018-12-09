@@ -1,0 +1,8 @@
+cent0s 7.2 下，我直接输入了 sudo /usr/share/code/code --unity-launch 就可以了，不用--user-data-dir 就行，默认就是root目录作为工作目录，但是root 目录中也要有.vscod目录
+
+使用官方的 --user-data-dir 的方式，最大的问题是gdb启动失败。无法调试
+--------------------- 
+作者：keidoekd2345 
+来源：CSDN 
+原文：https://blog.csdn.net/keidoekd2345/article/details/77652030 
+版权声明：本文为博主原创文章，转载请附上博文链接！
