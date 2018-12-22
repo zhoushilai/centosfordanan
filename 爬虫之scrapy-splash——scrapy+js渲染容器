@@ -1,0 +1,108 @@
+简介
+
+scrapy作为爬虫利器，我就不多说了。
+常见的结合js的爬虫，一般用来扒取网页动态内容，就是通过操作js获取渲染的内容。
+现在大部分网站都是ajax+json获取数据的方式，所以，大家习惯性一上来爬虫，第一件事就是抓包，然后找规律抓数据。当然有时候，接口加密算法很复杂，短时间内很难破解，通过js抓取内容相对容易，这时候结合js的爬虫就能比较直接地达到目的，当然数据抓取效率不如直接抓接口来得快。
+结合js的爬虫
+
+目前，我知道的结合js的爬虫有以下3种。（有补充的，麻烦大神留言。）
+
+selenium+webdriver（如firefox，chrome等）。这要求你系统有对应浏览器，并且过程中要全程开浏览器。说白了，就是你通过浏览器能看到啥，就能抓到啥。一般遇到特别复杂的验证码时，这个方法是有必要的，当然，开着浏览器爬虫的效率可想而知。
+selenium+phantomjs。PhantomJS是一个WebKit，他的使用方法和webdriver一样，但是他不需要开浏览器，你可以直接跑在无需GUI的linux服务器上，这点很赞。
+
+scrapy-splash。这个和以上两种方法比，优势有以下几点。
+
+
+
+splash作为js渲染服务，是基于Twisted和QT开发的轻量浏览器引擎，并且提供直接的http api。快速、轻量的特点使其容易进行分布式开发。
+splash和scrapy融合，两种互相兼容彼此的特点，抓取效率较好。
+虽然目前只有英文文档，但写的已经很详细了，仔细阅读便能快速开发。
+
+本文主要介绍第三种爬虫方案的使用。
+安装
+
+关于安装，网上有很多了，请自行谷歌。
+这里建议遵循官网安装方式。但注意因为splash服务需要依托docker。而docker在Ubuntu的安装方法，需要仔细看下文档，并注意Ubuntu版本。
+启动
+
+安装docker之后，官方文档给了docker启动splash容器的命令（docker run -d -p 8050:8050 scrapinghub/splash），但一定要查阅splash文档，来了解启动的相关参数。
+比如我启动的时候，就需要指定max-timeout参数。因为我操作js时间较长时，很有可能超出默认timeout时间，以防万一我设定为3600（一小时），但对于本来js操作时间就不长的的同学，注意不要乱设定max-timeout。
+docker run -d -p 8050:8050 scrapinghub/splash --max-timeout 3600
+使用
+
+关于scrapy-splash的使用教程主要来自scrapy-splash github和splash官方文档。除此之外，给出我最近写的一个scrapy-splash的代码。该代码主要实现js页面不断切换，然后抓取数据，下面是该代码的核心部分。因为，splash使用lua脚本实现js的操作，看下官方文档和这个代码，基本可以入门splash了。
+fly_spider.py
+class FlySpider(scrapy.Spider):
+    name = "FlySpider"
+    house_pc_index_url='xxxxx'
+
+    def __init__(self):
+        client = MongoClient("mongodb://name:pwd@localhost:27017/myspace")
+        db = client.myspace
+        self.fly = db["fly"]
+
+    def start_requests(self):
+        
+
+        for x in xrange(0,1):
+            try:
+                script = """
+                function process_one(splash)
+                    splash:runjs("$('#next_title').click()")
+                    splash:wait(1)
+                    local content=splash:evaljs("$('.scrollbar_content').html()")
+                    return content
+                end
+                function process_mul(splash,totalPageNum)
+                    local res={}
+                    for i=1,totalPageNum,1 do
+                        res[i]=process_one(splash)
+                    end
+                    return res
+                end
+                function main(splash)
+                    splash.resource_timeout = 1800
+                    local tmp=splash:get_cookies()
+                    splash:add_cookie('PHPSESSID', splash.args.cookies['PHPSESSID'],"/", "www.feizhiyi.com")
+                    splash:add_cookie('FEIZHIYI_LOGGED_USER', splash.args.cookies['FEIZHIYI_LOGGED_USER'],"/", "www.feizhiyi.com" )
+                    splash:autoload("http://cdn.bootcss.com/jquery/2.2.3/jquery.min.js")
+                    assert(splash:go{
+                        splash.args.url,
+                        http_method=splash.args.http_method,
+                        headers=splash.args.headers,
+                    })
+                    assert(splash:wait(splash.args.wait) )
+                    return {res=process_mul(splash,100)}
+                    
+                end
+                """
+                agent = random.choice(agents)
+                print "------cookie---------"
+                headers={
+                    "User-Agent":agent,
+                    "Referer":"xxxxxxx",
+                }
+                splash_args = {
+                    'wait': 3,
+                    "http_method":"GET",
+                    # "images":0,
+                    "timeout":1800,
+                    "render_all":1,
+                    "headers":headers,
+                    'lua_source': script,
+                    "cookies":cookies,
+                    # "proxy":"http://101.200.153.236:8123",
+                }
+                yield SplashRequest(self.house_pc_index_url, self.parse_result, endpoint='execute',args=splash_args,dont_filter=True)
+                # +"&page="+str(x+1)
+            except Exception, e:
+                print e.__doc__
+                print e.message
+                pass
+
+如果想更深地利用scrapy-splash，请研究splash官方文档，另外，欢迎留言交流学习。
+
+作者：playwolf719
+链接：https://www.jianshu.com/p/2516138e9e75
+來源：简书
+简书著作权归作者所有，任何形式的转载都请联系作者获得授权并注明出处。
