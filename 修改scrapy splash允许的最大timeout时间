@@ -4,3 +4,6 @@
 MAX_TIMEOUT = 90.0
 更改为:
 MAX_TIMEOUT = 300
+
+在运行docker时参数
+docker run -d -p 8050:8050 scrapinghub/splash --max-timeout 3600
