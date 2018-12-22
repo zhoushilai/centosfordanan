@@ -1,0 +1,55 @@
+
+import os, time
+ 
+def get_mem_usage_percent():
+    try:
+        f = open('/proc/meminfo', 'r')
+        for line in f:
+            if line.startswith('MemTotal:'):
+                mem_total = int(line.split()[1])
+            elif line.startswith('MemFree:'):
+                mem_free = int(line.split()[1])
+            elif line.startswith('Buffers:'):
+                mem_buffer = int(line.split()[1])
+            elif line.startswith('Cached:'):
+                mem_cache = int(line.split()[1])
+            elif line.startswith('SwapTotal:'):
+                vmem_total = int(line.split()[1])
+            elif line.startswith('SwapFree:'):
+                vmem_free = int(line.split()[1])
+            else:
+                continue
+        f.close()
+    except:
+        return None
+    physical_percent = usage_percent(mem_total - (mem_free + mem_buffer + mem_cache), mem_total)
+    virtual_percent = 0
+    if vmem_total > 0:
+        virtual_percent = usage_percent((vmem_total - vmem_free), vmem_total)
+    return physical_percent, virtual_percent
+ 
+def usage_percent(use, total):
+    try:
+        ret = (float(use) / total) * 100
+    except ZeroDivisionError:
+        raise Exception("ERROR - zero division error")
+    return ret
+ 
+statvfs = os.statvfs('/')
+ 
+os.system("service docker restart")
+os.system(r"(docker run -p 8050:8050 scrapinghub/splash &)")
+ 
+while True:
+    mem_usage = get_mem_usage_percent()
+    mem_usage = int(mem_usage[0])
+    print(mem_usage)
+    if mem_usage > 75:
+        os.system("service docker restart")
+        os.system(r"(docker run -p 8050:8050 scrapinghub/splash &)")
+    time.sleep(5)
+--------------------- 
+作者：bestlzk 
+来源：CSDN 
+原文：https://blog.csdn.net/bestlzk/article/details/80034129 
+版权声明：本文为博主原创文章，转载请附上博文链接！
