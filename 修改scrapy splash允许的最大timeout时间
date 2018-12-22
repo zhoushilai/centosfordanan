@@ -1,0 +1,6 @@
+在C:\Users\zhous\PycharmProjects\20180824\venv\Lib\site-packages\splash\default.py中修改
+
+原来为:
+MAX_TIMEOUT = 90.0
+更改为:
+MAX_TIMEOUT = 300
