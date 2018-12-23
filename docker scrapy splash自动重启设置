@@ -1,0 +1,2 @@
+docker scrapy splash设置
+: docker run -d -p 8050:8050 --memory=1.5G --restart=always scrapinghub/splash --maxrss 1000 --max-timeout 300
