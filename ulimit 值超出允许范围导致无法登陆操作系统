@@ -1,0 +1,47 @@
+在linux中，使用ulimit可以设置一些资源的使用限制。
+[root@root ~]# ulimit -a
+core file size          (blocks, -c) unlimited
+data seg size           (kbytes, -d) unlimited
+scheduling priority             (-e) 0
+file size               (blocks, -f) unlimited
+pending signals                 (-i) 30425
+max locked memory       (kbytes, -l) unlimited
+max memory size         (kbytes, -m) unlimited
+open files                      (-n) 1048576
+pipe size            (512 bytes, -p) 8
+POSIX message queues     (bytes, -q) 819200
+real-time priority              (-r) 0
+stack size              (kbytes, -s) 10240
+cpu time               (seconds, -t) unlimited
+max user processes              (-u) unlimited
+virtual memory          (kbytes, -v) unlimited
+file locks                      (-x) unlimited
+当然，也可以在/etc/security/limits.conf文件中设置。
+但是请注意，如果你在文件中设置，你可能设置的值超出范围，导致不可预知的后果，例如无法登陆操作系统。
+下面这个对open files的限制就是一个例子，它不识别unlimited，是一个有限的值。
+所以如果你在/etc/security/limits.conf中设置了
+* soft    nofile  unlimited
+* hard    nofile  unlimited
+那就完蛋了，因为你接下来的进程将登陆不了系统了。
+我们最好先使用ulimit命令验证一下你将要设置的值是否合法。
+例如：
+ 
+
+[root@root ~]# ulimit -n unlimited
+-bash: ulimit: open files: cannot modify limit: Operation not permitted
+[root@root ~]# ulimit -n 1
+[root@root ~]# ulimit -n 1024000000
+-bash: ulimit: open files: cannot modify limit: Operation not permitted
+[root@root ~]# ulimit -n 9999999999
+-bash: ulimit: open files: cannot modify limit: Operation not permitted
+[root@root ~]# ulimit -n 9999999
+-bash: ulimit: open files: cannot modify limit: Operation not permitted
+[root@root ~]# ulimit -n 999999
+[root@root ~]# 
+最终发现-n 最大可以设置为1024*1024=1048576
+[root@root ~]# ulimit -n 1048576
+[root@root ~]# ulimit -n 1048577
+-bash: ulimit: open files: cannot modify limit: Operation not permitted
+ 
+将合法的值设置在/etc/security/limits.conf中。
+如果你确实因为设置了不合法的值导致无法登陆系统，可以进入单用户，把值改回来。
