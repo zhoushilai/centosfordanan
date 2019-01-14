@@ -1,0 +1,7 @@
+Scrapyjs Splash不下载图片来加快响应速度
+2016年05月16日 20:43:21 bluespacezero 阅读数：1130 标签： scrapy  更多
+个人分类： scrapy 网络爬虫
+版权声明：本文为博主原创文章，未经博主允许不得转载。	https://blog.csdn.net/Q_AN1314/article/details/51428034
+splash的render.html端点有一个选项是images，是一个整数，可以是1或者0，1代表下载图片，0代表不下载图片，默认值是1，可以通过设置为0，这样在下载网页的时候就可以不下载图片，以加快响应的速度。
+
+如果使用的是lua脚本，可以在main函数中加入splash.images_enabled = false来禁用图片。
