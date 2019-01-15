@@ -1,0 +1,23 @@
+将composer设置为全局变量
+2018年07月09日 18:20:18 格局zoo 阅读数：1664 标签： composer 更多
+个人分类： Composer
+
+全局安装是将 Composer 安装到系统环境变量 PATH 所包含的路径下面，然后就能够在命令行窗口中直接执行 composer 命令了。
+Mac 或 Linux 系统：
+
+打开命令行窗口并执行如下命令将前面下载的 composer.phar 文件移动到 /usr/local/bin/目录下面：
+复制
+
+sudo mv composer.phar /usr/local/bin/composer
+
+Windows 系统：
+
+    找到并进入 PHP 的安装目录（和你在命令行中执行的 php 指令应该是同一套 PHP）。
+    将 composer.phar 复制到 PHP 的安装目录下面，也就是和 php.exe 在同一级目录。
+    在 PHP 安装目录下新建一个 composer.bat 文件，并将下列代码保存到此文件中。
+
+复制
+
+@php "%~dp0composer.phar" %*
+
+最后重新打开一个命令行窗口试一试执行 composer --version 看看是否正确输出版本号。
