@@ -1,0 +1,6 @@
+To Setup Crontab
+In order to run SuiteCRM Schedulers, edit your web server user's crontab file with this command:
+sudo crontab -e -u apache
+... and add the following line to the crontab file:
+*    *    *    *    *     cd /data/www/lsuitecrm; php -f cron.php > /dev/null 2>&1
+You should do this only after the installation is concluded. 
