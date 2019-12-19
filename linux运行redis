@@ -1,0 +1,3 @@
+在目录下运行
+[root@localhost zhoushilai]# cd /home/zhoushilai/redis-5.0.3
+[root@localhost redis-5.0.3]# ./src/redis-server ./redis.conf
