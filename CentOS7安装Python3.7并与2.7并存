@@ -1,0 +1,39 @@
+CentOS7安装Python3.7并与2.7并存
+
+yfm4321 2019-07-10 16:09:48  406  收藏
+分类专栏： Python 文章标签： Linux Python
+CentOS7默认安装了python2.7.5，当需要使用python3的时候，可以手动下载Python源码后编译安装。
+
+1：安装python3.5可能使用的依赖：
+
+yum install openssl-devel bzip2-devel expat-devel gdbm-devel readline-devel sqlite-devel libffi-devel
+
+2.下载python：
+
+wget “https://www.python.org/ftp/python/3.7.0/Python-3.7.0.tgz”
+
+3.解压下载好的压缩包：
+
+tar -zxvf Python-3.7.0.tgz
+
+4.配置编译：
+
+sudo mkdir /usr/local/python3
+sudo Python-3.7.0/configure --prefix=/usr/local/python3
+sudo make
+sudo make install
+1
+2
+3
+4
+（make install的时候如果报如下错：ModuleNotFoundError: No module named ‘_ctypes’，是因为3.7版本需要新的包libffi-devel，使用如下命令安装即可： yum install libffi-devel -y ；然后再make install）
+（如果执行第二条时报错configure: error: no acceptable C compiler found in P A T H 即 ： 配 置 错 误 ， 在 PATH即：配置错误，在PATH即：配置错误，在path中找不到可接受的C编译器，可执行yum -y install gcc解决）
+5.配置环境变量：
+修改 /etc/profile 文件，在文件末尾加上如下两行代码
+PATH=$PATH:/usr/local/python3/bin
+export PATH
+
+最后执行命令 source /etc/profile 或执行点命令 ./profile 使其修改生效。
+
+6:使用python3使用查看新安装的python
+在这里插入图片描述
